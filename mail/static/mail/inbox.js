@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // By default, load the inbox
   load_mailbox('inbox');
+
+  document.querySelector("#compose-form").addEventListener("submit", send);
 });
 
 function compose_email() {
@@ -30,4 +32,30 @@ function load_mailbox(mailbox) {
 
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+}
+
+function send(event) {
+    event.preventDefault();
+    // Gets form user input
+    const recipients = document.querySelector('#compose-recipients').value;
+    const subject = document.querySelector('#compose-subject').value;
+    const body = document.querySelector('#compose-body').value;
+    console.log(recipients, subject, body);
+
+    // Passes user input to backend, through the 'email' route, uses the 'compose' views.py function to process and send the message
+    fetch('/emails', {
+      method: 'POST',
+      body: JSON.stringify({
+          "recipients": recipients,
+          "subject": subject,
+          "body": body
+      })
+    })
+    .then(response => response.json())
+    .then(result => {
+        // Print result
+        console.log(result);
+        load_mailbox('sent');
+    });
+    
 }
