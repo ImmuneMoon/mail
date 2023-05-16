@@ -30,8 +30,24 @@ function load_mailbox(mailbox) {
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
 
+
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+
+
+  // Gets the emails for the specified user
+  fetch(`/emails/${mailbox}`)
+  .then(response => response.json())
+  .then(emails => {
+      console.log(emails);
+
+    // Loops throught the emails
+    emails.forEach(element => {
+      
+    });
+
+  });
+
 }
 
 function send(event) {
