@@ -42,12 +42,53 @@ function load_mailbox(mailbox) {
       console.log(emails);
 
     // Loops throught the emails
-    emails.forEach(element => {
-      
+    emails.forEach(email => {
+		const element = document.createElement('div');
+		element.style.display = 'flex';
+		element.style.justifyContent = 'space-between';
+		element.style.alignItems = 'center';
+		element.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.100)';
+		element.style.borderRadius = '50px';
+		element.style.padding = '1.5rem';
+		element.style.margin = '1rem 0 1rem 0';
+		if (email.read === 'True') {
+			element.style.backgroundColor = 'lightgrey';
+		}
+		element.innerHTML = `
+			<h2 class="fs-5 fw-bolder text-center my-auto">${email.sender}</h2>
+			<h3 class="fs-6 fw-bold text-center my-auto">${email.subject}</h3>
+			<p class="text-center my-auto">${email.timestamp}</p>
+		`;
+
+		// Email element hover effect
+		element.addEventListener('mouseover', () => {
+			element.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.200)';
+		})
+		element.addEventListener('mouseout', () => {
+			element.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.100)';
+		})
+
+		element.addEventListener('click', message, () => {
+			return email.id;
+		});
+
+		document.querySelector('#emails-view').append(element);
+
     });
 
   });
 
+}
+
+function message(id) {
+	console.log(id);
+/*
+	fetch(`/emails/${mailbox}`)
+	.then(response => response.json())
+	.then(emails => {
+
+	});
+	*/
 }
 
 function send(event) {
