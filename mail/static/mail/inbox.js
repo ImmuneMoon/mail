@@ -44,6 +44,7 @@ function load_mailbox(mailbox) {
     // Loops throught the emails
     emails.forEach(email => {
 		const element = document.createElement('div');
+		element.id = 'email';
 		element.style.display = 'flex';
 		element.style.justifyContent = 'space-between';
 		element.style.alignItems = 'center';
@@ -68,8 +69,8 @@ function load_mailbox(mailbox) {
 			element.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.100)';
 		})
 
-		element.addEventListener('click', message, () => {
-			return email.id;
+		element.addEventListener('click', () => {
+			return message(email.id);
 		});
 
 		document.querySelector('#emails-view').append(element);
@@ -81,14 +82,22 @@ function load_mailbox(mailbox) {
 }
 
 function message(id) {
-	console.log(id);
-/*
-	fetch(`/emails/${mailbox}`)
+	console.log('id',id);
+	fetch(`/emails/${id}`)
 	.then(response => response.json())
-	.then(emails => {
-
+	.then(email => {
+		console.log('emails',email);
 	});
-	*/
+	console.log(email.sender);
+	const message = document.querySelector('#email');
+	message.style.display = 'flex';
+	message.style.flexDirection = 'column';
+	message.innerHTML = `
+		<h2 class="">${Object.values(email.sender)}</h2>
+		<h3 class="">${Object.values(email.subject)}</h3>
+		<p>${Object.values(email.body)}</p>
+		<p class="">${Object.values(email.timestamp)}</p>
+	`;
 }
 
 function send(event) {
