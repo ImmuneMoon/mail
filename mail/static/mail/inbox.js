@@ -39,7 +39,6 @@ function load_mailbox(mailbox) {
   fetch(`/emails/${mailbox}`)
   .then(response => response.json())
   .then(emails => {
-      console.log(emails);
 
     // Loops throught the emails
     emails.forEach(email => {
@@ -52,26 +51,36 @@ function load_mailbox(mailbox) {
 		element.style.borderRadius = '50px';
 		element.style.padding = '1.5rem';
 		element.style.margin = '1rem 0 1rem 0';
-		if (email.read === 'True') {
+		console.log(email.read);
+		if (email.read === 'true') {
+			console.log('read true');
 			element.style.backgroundColor = 'lightgrey';
 		}
 		element.innerHTML = `
-			<h2 class="fs-5 fw-bolder text-center my-auto">${email.sender}</h2>
-			<h3 class="fs-6 fw-bold text-center my-auto">${email.subject}</h3>
+			<h2 class="fs-5 fw-bolder text-center my-auto mx-3">${email.sender}</h2>
+			<h3 class="fs-6 fw-bold text-center my-auto mx-3">${email.subject}</h3>
 			<p class="text-center my-auto">${email.timestamp}</p>
 		`;
 
-		// Email element hover effect
-		element.addEventListener('mouseover', () => {
-			element.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.200)';
-		})
-		element.addEventListener('mouseout', () => {
-			element.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.100)';
-		})
 
+        function handleMouseOver() {
+			element.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.200)';
+		  }
+  
+		function handleMouseOut() {
+			element.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.100)';
+		  }
+
+		// Email element hover effect
+		element.addEventListener('mouseover', handleMouseOver);
+		element.addEventListener('mouseout', handleMouseOut);
+	
 		element.addEventListener('click', () => {
-			return message(email.id);
-		});
+			// Removes the event listeners before calling the message function
+			element.removeEventListener('mouseover', handleMouseOver);
+			element.removeEventListener('mouseout', handleMouseOut);
+			message(email.id);
+		  });
 
 		document.querySelector('#emails-view').append(element);
 
@@ -86,18 +95,52 @@ function message(id) {
 	fetch(`/emails/${id}`)
 	.then(response => response.json())
 	.then(email => {
-		console.log('emails',email);
+		console.log('email',email);
+		console.log(email.sender);
+		const message = document.querySelector('#email');
+		message.style = 'none';
+		message.style.display = 'flex'
+		message.style.flexDirection = 'column';
+		message.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.100)';
+		message.style.borderRadius = '50px';
+		message.style.padding = '1.5rem';
+		message.style.margin = '1rem 0 1rem 0';
+		message.innerHTML = `
+			<div class="d-flex justify-content-between align-items-center mx-1">
+				<h2 class="my-auto text-center">${email.sender}</h2>
+				<p class="my-auto text-center">${email.timestamp}</p>
+			</div>
+			<div class="mx-3">
+				<h3 class="mx-3">${email.subject}</h3>
+				<p class="mx-5">${email.body}</p>
+			</div>
+		`;
+	
+		if (email.read !== 'True') {
+
+			email.read = true
+			readUpdate = {
+				"read": true
+			}
+
+			// Perform an POST request to save the updated data
+			fetch(`/emails/${id}`, {
+				method: 'PUT',
+				// Updates read to true
+				body: JSON.stringify(readUpdate)
+			})
+			.then(response => response.json())
+			.then(result => {
+				// Handle the result after the update is complete
+				console.log('Update successful:', result);
+			})
+			.catch(error => {
+				// Handle any errors that occur during the update
+				console.error('Update failed:', error);
+			});
+		}
+
 	});
-	console.log(email.sender);
-	const message = document.querySelector('#email');
-	message.style.display = 'flex';
-	message.style.flexDirection = 'column';
-	message.innerHTML = `
-		<h2 class="">${Object.values(email.sender)}</h2>
-		<h3 class="">${Object.values(email.subject)}</h3>
-		<p>${Object.values(email.body)}</p>
-		<p class="">${Object.values(email.timestamp)}</p>
-	`;
 }
 
 function send(event) {
@@ -120,7 +163,7 @@ function send(event) {
     .then(response => response.json())
     .then(result => {
         // Print result
-        console.log(result);
+        alert('Email Sent!', result);
         load_mailbox('sent');
     });
     
