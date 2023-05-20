@@ -39,11 +39,15 @@ function load_mailbox(mailbox) {
 	fetch(`/emails/${mailbox}`)
 	.then(response => response.json())
 	.then(emails => {
-
+		// Initializes an index for every email to assign an id to later
+		let index = 0;
 		// Loops throught the emails
 		emails.forEach(email => {
+			console.log('new index',index);
 			const element = document.createElement('div');
-			element.id = 'email';
+			// Gives the email an id equal to the current index
+			element.id = index;
+			element.className = 'email';
 			element.style.display = 'flex';
 			element.style.justifyContent = 'space-between';
 			element.style.alignItems = 'center';
@@ -52,21 +56,24 @@ function load_mailbox(mailbox) {
 			element.style.padding = '1.5rem';
 			element.style.margin = '1rem 0 1rem 0';
 			console.log(email.read);
+
+			// Checks if the email is read, if it is, the background color of the div is made grey
 			if (email.read === true) {
 				console.log('read is true');
 				element.style.backgroundColor = 'lightgrey';
 			}
+			// Renders the relevant contents for the preview message
 			element.innerHTML = `
 				<h2 class="fs-5 fw-bolder text-center my-auto mx-3">${email.sender}</h2>
 				<h3 class="fs-6 fw-bold text-center my-auto mx-3">${email.subject}</h3>
 				<p class="text-center my-auto mx-3">${email.timestamp}</p>
 			`;
 
-
+			// Darker shadowing for when a user hovers over the message
 			function handleMouseOver() {
 				element.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.200)';
 			}
-	
+			// Lighter shadowing for when the user isnt hovering
 			function handleMouseOut() {
 				element.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.150)';
 			}
@@ -75,12 +82,13 @@ function load_mailbox(mailbox) {
 			element.addEventListener('mouseover', handleMouseOver);
 			element.addEventListener('mouseout', handleMouseOut);
 		
-			element.addEventListener('click', () => {
-				// Removes the event listeners before calling the message function
-				element.removeEventListener('mouseover', handleMouseOver);
-				element.removeEventListener('mouseout', handleMouseOut);
-				message(email.id);
+			element.addEventListener('click', (event) => {
+				// Passes the elements id and message id to message() function when a message is clicked
+				message(event.target.id, email.id);
 			});
+
+			// Increments the index
+			index ++;
 
 			document.querySelector('#emails-view').append(element);
 
@@ -90,108 +98,118 @@ function load_mailbox(mailbox) {
 
 }
 
-function message(id) {
-	console.log('id',id);
-	fetch(`/emails/${id}`)
+// For displaying individual emails
+function message(id, emailId) {
+	// Fetches from the email/ url, the email matching the given email id
+	fetch(`/emails/${emailId}`)
 	.then(response => response.json())
 	.then(email => {
-		console.log('email',email);
-		console.log(email.sender);
-		const message = document.querySelector('#email');
-		message.style = 'none';
-		message.style.display = 'flex'
-		message.style.flexDirection = 'column';
-		message.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.150)';
-		message.style.borderRadius = '50px';
-		message.style.padding = '1.5rem';
-		message.style.margin = '1rem 0 1rem 0';
-		message.style.height = '70vh'
 
-		let isArchived
-		if (email.archived === false) {
-			isArchived = 'Archive';
-		}
-		else {
-			isArchived = 'Unarchive';
-		}
+		// Gets the message content
+		const message = document.getElementById(`${id}`);
+		// Not a perfect way to do it, but restricts rendering the message if the div element wasnt clicked since the id of each is a number
+		if (typeof(id === 'Number')) {
+			message.style = 'none';
+			message.style.display = 'flex'
+			message.style.flexDirection = 'column';
+			message.style.boxShadow = '0px 0px 10px 1px rgba(0, 0, 0, 0.150)';
+			message.style.borderRadius = '50px';
+			message.style.padding = '1.5rem';
+			message.style.margin = '1rem 0 1rem 0';
+			message.style.height = '70vh'
 
-		message.innerHTML = `
-			<div class="d-flex justify-content-between align-items-center mx-1">
-				<h2 class="my-auto text-center">${email.sender}</h2>
-				<p class="my-auto text-center">${email.timestamp}</p>
-			</div>
-			<div class="d-flex flex-column mx-2 my-auto h-75">
-				<h3 class="mx-3 pb-4" style="border-bottom: solid 2px grey";">${email.subject}</h3>
-				<p class=" mx-5 mt-4 h-100">${email.body}</p>
-			</div>
-			<button id="archive-bttn" type="button" class="btn btn-primary ml-auto mr-3 align-self-end" style="width: 7rem;">${isArchived}</button>
-		`;
-
-	
-		if (email.read !== true) {
-
-			email.read = true;
-			const readUpdate = {
-				"read": email.read
+			// Checks if the message is archives and holds the relevant status for the archive button
+			let isArchived
+			if (email.archived === false) {
+				isArchived = 'Archive';
 			}
-			console.log('update',readUpdate);
-			// Perform an POST request to save the updated data
-			fetch(`/emails/${id}`, {
-				method: 'PUT',
-				// Updates read to true
-				body: JSON.stringify(readUpdate)
-			})
-			.then(response => response.json())
-			.then(result => {
-				// Handle the result after the update is complete
-				console.log('Update successful:', result);
-			})
-			.catch(error => {
-				// Handle any errors that occur during the update
-				console.error('Update failed:', error);
+			else {
+				isArchived = 'Unarchive';
+			}
+
+			message.innerHTML = `
+				<div class="d-flex justify-content-between align-items-center mx-1">
+					<h2 class="my-auto text-center">${email.sender}</h2>
+					<p class="my-auto text-center">${email.timestamp}</p>
+				</div>
+				<div class="d-flex flex-column mx-2 my-auto h-75">
+					<h3 class="mx-3 pb-4" style="border-bottom: solid 2px grey";">${email.subject}</h3>
+					<p class=" mx-5 mt-4 h-100">${email.body}</p>
+				</div>
+				<button id="archive-bttn" type="button" class="btn btn-primary ml-auto mb-2 mr-3 align-self-end" style="width: 7rem;">${isArchived}</button>
+			`;
+
+			// Marks the message as read
+			if (email.read !== true) {
+
+				email.read = true;
+				const readUpdate = {
+					"read": email.read
+				}
+				// Performs an POST request to save the updated data
+				fetch(`/emails/${emailId}`, {
+					method: 'PUT',
+					// Updates read to true
+					body: JSON.stringify(readUpdate)
+				})
+				.then(response => response.json())
+				.then(result => {
+					// Handles the result after the update is complete
+					console.log('Update successful:', result);
+				})
+				.catch(error => {
+					// Handles any errors that occur during the update
+					console.error('Update failed:', error);
+				});
+			}
+
+			// Targets the archive button
+			const archiveBttn = document.querySelector('#archive-bttn');
+			// Listens for whe the archive button is clicked
+			archiveBttn.addEventListener('click', () => {
+				// Passes the email id to the archive() function
+				archive(emailId);
 			});
 		}
-
-		const archiveBttn = document.querySelector('#archive-bttn');
-		archiveBttn.addEventListener('click', () => {
-			archive(id);
-		});
 	});
 }
 
+// Archives the message
 function archive(id) {
 	fetch(`/emails/${id}`)
 	.then(response => response.json())
 	.then(email => { 
+		// Sets the archive to true or false status based on what it was when clicked
 		if (email.archived === false) {
 			email.archived = true
 		}
 		else {
 			email.archived = false
 		}
+		// Updates the archive status
 		const archiveUpdate = {
 			"archived": email.archived
 		}
-		console.log('update',archiveUpdate);
-		// Perform an POST request to save the updated data
+		// Performs an POST request to save the updated data
 		fetch(`/emails/${id}`, {
 			method: 'PUT',
 			// Updates archive
 			body: JSON.stringify(archiveUpdate)
 		})
 		.then(result => {
-			// Handle the result after the update is complete
+			// Handles the result after the update is complete
 			console.log('Update successful:', result);
 			load_mailbox('inbox');
 
 		})
 		.catch(error => {
-			// Handle any errors that occur during the update
+			// Handles any errors that occur during the update
 			console.error('Update failed:', error);
 		});
 	});
 }
 
+// For sending a message
 function send(event) {
     event.preventDefault();
     // Gets form user input
