@@ -25,7 +25,6 @@ function compose_email() {
 }
 
 function load_mailbox(mailbox) {
-  
 	// Show the mailbox and hide other views
 	document.querySelector('#emails-view').style.display = 'block';
 	document.querySelector('#compose-view').style.display = 'none';
@@ -34,8 +33,7 @@ function load_mailbox(mailbox) {
 	// Show the mailbox name
 	document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
 
-
-	console.log('mailbox:',mailbox);
+	
 	// Gets the emails for the specified user
 	fetch(`/emails/${mailbox}`)
 	.then(response => response.json())
@@ -44,7 +42,6 @@ function load_mailbox(mailbox) {
 		let index = 0;
 		// Loops throught the emails
 		emails.forEach(email => {
-			console.log('new index',index);
 			const element = document.createElement('div');
 			// Gives the email an id equal to the current index
 			element.id = index;
@@ -117,7 +114,6 @@ function read(emailId, mailbox) {
 			.then(response => response.json())
 			.then(result => {
 				// Handles the result after the update is complete
-				console.log('Update successful:', result);
 			})
 			.catch(error => {
 				// Handles any errors that occur during the update
@@ -160,7 +156,6 @@ function archive(id, mailbox) {
 		})
 		.then(result => {
 			// Handles the result after the update is complete
-			console.log('Update successful:', result);
 			// Loads the current mailbox
 			load_mailbox(mailbox);
 
@@ -179,7 +174,6 @@ function send(event) {
     const recipients = document.querySelector('#compose-recipients').value;
     const subject = document.querySelector('#compose-subject').value;
     const body = document.querySelector('#compose-body').value;
-    console.log(recipients, subject, body);
 
     // Passes user input to backend, through the 'email' route, uses the 'compose' views.py function to process and send the message
     fetch('/emails', {
@@ -195,17 +189,33 @@ function send(event) {
         // Print result
         alert('Email Sent!', result);
         load_mailbox('sent');
+		// Refreshes page to keep sent messages from appearing in inbox, probably a better way to do it, but this works
+		window.location.reload();
     });
     
 }
 
+function reply(emailId) {
+	fetch(`/emails/${emailId}`)
+	.then(response => response.json())
+	.then(email => {
+		// Show compose view and hide other views
+		document.querySelector('#emails-view').style.display = 'none';
+		document.querySelector('#compose-view').style.display = 'block';
+
+		// Clear out composition fields
+		document.querySelector('#compose-recipients').value = email.sender;
+		document.querySelector('#compose-subject').value = email.subject;
+		document.querySelector('#compose-body').value = `On ${email.timestamp}, ${email.sender} wrote: \n ${email.body} \n \n`;
+	});
+}
+
 function inboxStyle(element, email) {
-	console.log('element',element,'email',email)
 
 	// Resets the styling and innerhtml
 	element.style = 'none';
 	element.innerHTML = '';
-
+	// Styles the element
 	element.style.display = 'flex';
 	element.style.justifyContent = 'space-between';
 	element.style.alignItems = 'center';
@@ -213,11 +223,9 @@ function inboxStyle(element, email) {
 	element.style.borderRadius = '50px';
 	element.style.padding = '1.5rem';
 	element.style.margin = '1rem 0 1rem 0';
-	console.log(email.read);
 
 	// Checks if the email is read, if it is, the background color of the div is made grey
 	if (email.read === true) {
-		console.log('read is true');
 		element.style.backgroundColor = 'lightgrey';
 	}
 	// Renders the relevant contents for the preview message
@@ -229,7 +237,6 @@ function inboxStyle(element, email) {
 }
 
 function messageStyle(element, email) {
-	console.log('message',element,'email',email)
 	// Resets the styling and innerhtml
 	element.style = 'none';
 	element.innerHTML = '';
@@ -253,7 +260,8 @@ function messageStyle(element, email) {
 	element.innerHTML = `
 		<div class="d-flex justify-content-between align-items-center mx-1">
 			<h2 class="my-auto text-center">${email.sender}</h2>
-			<p class="my-auto text-center">${email.timestamp}</p>
+			<p class="my-auto ml-auto mr-3 text-center">${email.timestamp}</p>
+			<button class="btn btn-outline-dark" type="button" onclick="reply(${email.id});">Reply</button>
 		</div>
 		<div class="d-flex flex-column mx-2 my-auto h-75">
 			<h3 class="mx-3 pb-4" style="border-bottom: solid 2px grey";">${email.subject}</h3>
