@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	// By default, load the inbox
 	load_mailbox('inbox');
 
+	// Calls the send function on button press
 	document.querySelector("#compose-form").addEventListener('submit', send);
 });
 
@@ -33,7 +34,7 @@ function load_mailbox(mailbox) {
 	// Show the mailbox name
 	document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
 
-	
+
 	// Gets the emails for the specified user
 	fetch(`/emails/${mailbox}`)
 	.then(response => response.json())
@@ -114,6 +115,7 @@ function read(emailId, mailbox) {
 			.then(response => response.json())
 			.then(result => {
 				// Handles the result after the update is complete
+				console.log(result);
 			})
 			.catch(error => {
 				// Handles any errors that occur during the update
@@ -156,6 +158,7 @@ function archive(id, mailbox) {
 		})
 		.then(result => {
 			// Handles the result after the update is complete
+			alert('Archive Successful:', result);
 			// Loads the current mailbox
 			load_mailbox(mailbox);
 
@@ -169,11 +172,11 @@ function archive(id, mailbox) {
 
 // For sending a message
 function send(event) {
-    event.preventDefault();
+	event.preventDefault();
     // Gets form user input
     const recipients = document.querySelector('#compose-recipients').value;
     const subject = document.querySelector('#compose-subject').value;
-    const body = document.querySelector('#compose-body').value;
+    let body = document.querySelector('#compose-body').value;
 
     // Passes user input to backend, through the 'email' route, uses the 'compose' views.py function to process and send the message
     fetch('/emails', {
@@ -187,10 +190,14 @@ function send(event) {
     .then(response => response.json())
     .then(result => {
         // Print result
-        alert('Email Sent!', result);
-        load_mailbox('sent');
-		// Refreshes page to keep sent messages from appearing in inbox, probably a better way to do it, but this works
-		window.location.reload();
+		if (result.error) {
+			alert(result.error);
+		}
+		else {
+			// Refreshes page to keep sent messages from appearing in inbox, probably a better way to do it, but this works
+        	load_mailbox('sent');
+
+		}
     });
     
 }
@@ -203,10 +210,17 @@ function reply(emailId) {
 		document.querySelector('#emails-view').style.display = 'none';
 		document.querySelector('#compose-view').style.display = 'block';
 
-		// Clear out composition fields
+		let subject = email.subject;
+
+		// Adds 'Re: ' to the subject if its not alredy there
+		if (!subject.includes('Re: ')) {
+			subject = 'Re: ' + subject;
+		}
+
 		document.querySelector('#compose-recipients').value = email.sender;
-		document.querySelector('#compose-subject').value = email.subject;
-		document.querySelector('#compose-body').value = `On ${email.timestamp}, ${email.sender} wrote: \n ${email.body} \n \n`;
+		document.querySelector('#compose-subject').value = subject;
+		document.querySelector('#compose-body').value = `On ${email.timestamp}, ${email.sender} wrote: \n ${email.body} \n`;
+
 	});
 }
 
@@ -267,6 +281,6 @@ function messageStyle(element, email) {
 			<h3 class="mx-3 pb-4" style="border-bottom: solid 2px grey";">${email.subject}</h3>
 			<p class=" mx-5 mt-4 h-100">${email.body}</p>
 		</div>
-		<button id="archive-bttn" type="button" class="btn btn-primary ml-auto mb-2 mr-3 align-self-end" style="width: 7rem;">${isArchived}</button>
+		<button id="archive-bttn" type="button" class="btn btn-primary mr-auto mb-2 ml-3 align-self-end" style="width: 7rem;">${isArchived}</button>
 	`;
 }
